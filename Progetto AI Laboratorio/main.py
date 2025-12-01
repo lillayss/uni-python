@@ -1,58 +1,55 @@
 from funzioni import sum_of_list
 
-# Read the entire content of the file names.txt
-names_text = open("./names.txt", "r").read()
+# Read file and clean text
+with open("./names.txt", "r") as f:
+    cleaned_text = f.read().replace("\n", "").lower()
 
-# Remove newlines to get a continuous string
-cleaned_text = names_text.replace("\n", "")
+# Valid characters (alphabet only)
+char_list = [chr(97 + i) for i in range(26)]
 
-# List of unique characters present in the text, sorted alphabetically
-unique_chars = sorted(set(cleaned_text))
-# Exclude the first element which might be a non-alphabetic character (like a space or newline)
-char_list = unique_chars[1:]  
+# Map char -> index
+char_to_index = {c: i for i, c in enumerate(char_list)}
 
-# Dictionary to map letters to indices (a -> 0, b -> 1, ..., z -> 25)
-char_to_index = {chr(97 + i): i for i in range(26)}
-
-# 26x26 matrix initialized to zero to count bigram frequencies
-# freq_matrix[i][j] indicates how many times the i-th character is followed by the j-th character
+# 26x26 frequency matrix
 freq_matrix = [[0 for _ in range(26)] for _ in range(26)]
 
-# Build the frequency matrix
+# Build bigram frequencies
 for i in range(len(cleaned_text) - 1):
-    current_char = cleaned_text[i]
-    next_char = cleaned_text[i + 1]
-    
-    # Skip characters not in the valid character list
-    if current_char not in char_list or next_char not in char_list:
+    c1 = cleaned_text[i]
+    c2 = cleaned_text[i + 1]
+
+    if c1 not in char_to_index or c2 not in char_to_index:
         continue
-    
-    # Increment the frequency of the current bigram
-    freq_matrix[char_to_index[current_char]][char_to_index[next_char]] += 1
 
-# Print the sum of frequencies for each row (how many times each letter appears as the first letter of a bigram)
-for i in range(26):
-    print(sum_of_list(freq_matrix[i]))
+    freq_matrix[char_to_index[c1]][char_to_index[c2]] += 1
 
-# Diagonal normalized matrix (probability of each letter followed by itself)
-# diag_matrix[i] = frequency of letter i followed by itself / sum of the row frequencies
-diag_matrix = [[freq_matrix[i][i] / sum_of_list(freq_matrix[i]) if sum_of_list(freq_matrix[i]) != 0 else 0 
-                for i in range(26)]]
-
-# Sum of probabilities on the diagonal (should be roughly 1 if all rows have frequencies)
-print(sum_of_list(diag_matrix[0]))
-
-# Compute transition probabilities for each letter
-# probs[i][j] = probability that character i is followed by character j
+# Print row sums (how many times each letter appears as first letter of a bigram)
 for i in range(26):
     row_sum = sum_of_list(freq_matrix[i])
-    
+    print(row_sum)
+
+# Diagonal normalized matrix: P(letter followed by itself)
+diag_matrix = [
+    [
+        freq_matrix[i][i] / sum_of_list(freq_matrix[i])
+        if sum_of_list(freq_matrix[i]) != 0 else 0
+        for i in range(26)
+    ]
+]
+
+print(sum_of_list(diag_matrix[0]))
+
+# Transition probabilities for each letter
+for i in range(26):
+    row_sum = sum_of_list(freq_matrix[i])
+
     if row_sum == 0:
         print(chr(97+i), "no occurrences")
         continue
-    
-    probs = [freq_matrix[i][j] / row_sum for j in range(26)]
-    print(chr(97+i), sum(probs))  # the sum should be roughly 1
 
-# Print the diagonal matrix
+    probs = [freq_matrix[i][j] / row_sum for j in range(26)]
+    print(chr(97+i), sum(probs))  # should be 1
+
+# Print diagonal matrix
 print(diag_matrix)
+print(freq_matrix)
