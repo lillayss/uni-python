@@ -21,4 +21,3 @@ def inversion_method(l):
     for i in range(len(a)):
         if u <= a[i]:
             return i
-    pass
